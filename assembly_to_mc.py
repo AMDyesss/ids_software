@@ -81,7 +81,7 @@ def parse_line(data, addr):
         case "li":
             return li(data)
         case "jr":
-            return jr(data, addr)
+            return jr(data)
         case "nop":
             return nop()
         case _:
@@ -117,13 +117,13 @@ def sw(data):
 
 def j(data, addr): # Jump and link
     #jump straight to address, or jump with offset from curr address????
-    offset = subroutine_addresses[data[1]] - addr # Get subroutine address offset
+    offset = str(int(subroutine_addresses[data[1]]) - addr) # Get subroutine address offset
     offset = get_offset_str(addr, 20) # Format as 20 bit string
    #offset = get_offset_str(data[1], 20) # 20b
     rd = "00000" #rd=x0  5b
     opcode = "1100000" # 7b
     
-    return addr + rd + opcode
+    return offset + rd + opcode
 
 # Needs no special implementation, just relies on same opcode and format as j.
 # Uses a nonzero register and sets offset = 0
@@ -210,7 +210,6 @@ def ble(data, addr=0):
         # indices:    0  1 2 3 4 5 6 7 8 9 10 11
         # ble     a4,a5,.L3 - B type
         # imm[11](1b)_imm[9:4](6b)_rs2(5b)_rs1(5b)_101(3b)_imm[3:0](4b)_imm[10](1b)_110_00
-
     
         imm2 = offset[0] + offset[2:8] #imm[11] + imm[9:4] trust me the math is right (dont trust me)
         rs2 = reg_decode(data[2])

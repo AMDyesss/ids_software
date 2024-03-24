@@ -1,4 +1,4 @@
-module my_ram_fifo 
+module fifo 
 #(
    parameter DATA_W = 64,        // Data width
    parameter DEPTH = 64          // Depth

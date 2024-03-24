@@ -130,10 +130,12 @@ def j(data, addr): # Jump and link
 def jr(data):
     # data = [opcode register]
     addr = "00000000000000000000"
+    addr_upper = "000000000000" # imm[19:8]
+    addr_lower = "0000000" # imm[7:0]
     rd = reg_decode(data[1]) #  5b
     opcode = "0010001" # 7b
     
-    return addr + rd + opcode
+    return addr_upper + rd + addr_lower + opcode
 
 def lw(data):
     # data = [opcode src offset dst]
@@ -192,13 +194,32 @@ def bge(data, addr):
     return imm2 + rs2 + rs1 + funct3 + imm1 + opcode
 
 # Pseudo instruction. Implement bge and flip operands
-def ble(data):
-    # The implementation for b type instructions is really weird. Let me know how it looks in the hardware
-    # and if it differs from the spec in the Risc V manual I can change this function no problem
-    # branch rs1 < rs2: jump_location
-    reorder = [data[0], data[2], data[1], data[3]]
-    instr = bge(reorder)
-    return instr
+def ble(data, addr=0):
+    old = 0
+    if old: # old way 
+        # The implementation for b type instructions is really weird. Let me know how it looks in the hardware
+        # and if it differs from the spec in the Risc V manual I can change this function no problem
+        # branch rs1 < rs2: jump_location
+        reorder = [data[0], data[2], data[1], data[3]]
+        instr = bge(reorder)
+        return instr
+    else: # new way
+        offset = get_offset_str(subroutine_addresses[data[3]] - addr, 12) # [31:20] - 5b
+    
+        # offset == "11 10 9 8 7 6 5 4 3 2 1  0 " -12b
+        # indices:    0  1 2 3 4 5 6 7 8 9 10 11
+        # ble     a4,a5,.L3 - B type
+        # imm[11](1b)_imm[9:4](6b)_rs2(5b)_rs1(5b)_101(3b)_imm[3:0](4b)_imm[10](1b)_110_00
+
+    
+        imm2 = offset[0] + offset[2:8] #imm[11] + imm[9:4] trust me the math is right (dont trust me)
+        rs2 = reg_decode(data[2])
+        rs1 = reg_decode(data[1])
+        funct3 = "101"
+        imm1 = offset[8:12] + offset[1]
+        opcode = "1100011"
+
+        return imm2 + rs2 + rs1 + funct3 + imm1 + opcode
 
 # Compressed instruction, that's why you couldn't find it initially. It is in the RISC-V Reference manual though
 # Implemented by calling addi rather than using a unique hardware implementation
